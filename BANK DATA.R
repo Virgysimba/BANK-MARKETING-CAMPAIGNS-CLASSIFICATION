@@ -42,7 +42,10 @@ library(biglasso)
 library(bigmemory)
 library(gridExtra)
 library(rattle)
-require(grDevices)
+require
+library(psych)
+library(ggplot2)
+library(GGally)
 #Load the dataset to be used
 bmData <- read.csv("bmData.csv")
 # To View the bank Data set
@@ -67,8 +70,12 @@ bmclean$month <- as.factor(bmclean$month)
 bmclean$day_of_week <- as.factor(bmclean$day_of_week)
 bmclean$poutcome <- as.factor(bmclean$poutcome)
 bmclean$y <- as.factor(bmclean$y)
-# Observing the structure of the dataset
+# Observing the Structure of the Dataset
 str(bmclean)
+#Observing the Summary of the Dataset
+summary(bmclean)
+# Description of the dataset
+describeData(bmclean)
 # Investigating the levels of categorical variables
 levels(bmclean$job)
 levels(bmclean$marital)
@@ -81,6 +88,41 @@ levels(bmclean$y)
 levels(bmclean$housing)
 levels(bmclean$month)
 levels(bmclean$day_of_week)
+# Assigning the subscribers to YSub 
+YSub <- filter(bmData, y == "yes")
+# Correlation of Numeric Variables
+correlation_matrix <- cor(bmclean[, c("age", "duration", "emp.var.rate", "cons.price.idx", 
+                                      "cons.conf.idx", "euribor3m", "nr.employed", 
+                                      "previous", "pdays", "campaign")])
+# Visualize the correlation matrix using a heatmap
+heatmap(correlation_matrix, 
+        col = colorRampPalette(c("blue", "white", "red"))(20),
+        main = "Correlation Matrix Heatmap",
+        xlab = "Numerical Variables", ylab = "Numerical Variables")
+# Create histogram for age by subscription status
+ggplot(data = bmData, aes(x = age, fill = y)) +
+  geom_histogram(binwidth = 7, position = "dodge", alpha = 0.7) +
+  labs(title = "Distribution of Age by Term Deposit Subscription",
+       x = "Age",
+       y = "Frequency",
+       fill = "Subscription Status") +
+  theme_minimal()
+# Create histogram for Duration by subscription status
+ggplot(data = bmData, aes(x = duration, fill = y)) +
+  geom_histogram(binwidth = 200, position = "dodge", alpha = 0.7) +
+  labs(title = "Distribution of Duration by Term Deposit Subscription",
+       x = "Duration",
+       y = "Frequency",
+       fill = "Subscription Status") +
+  theme_minimal()
+# Create a boxplot for age by subscription status
+ggplot(data = bmData, aes(x = y, y = age, fill = y)) +
+  geom_boxplot() +
+  labs(title = "Distribution of Age by Term Deposit Subscription",
+       x = "Subscription Status",
+       y = "Age",
+       fill = "Subscription Status") +
+  theme_minimal()
 # Frequency Tables for Categorical Variables
 table(bmData$poutcome, bmData$y)
 table(bmData$contact, bmData$y)
@@ -88,101 +130,8 @@ table(bmData$education)
 table(bmData$default)
 table(bmData$housing)
 table(bmData$month)
-install.packages()
-library(psych)
-library(ggplot2)
-library(GGally)
-# Investigating the inferential part of the dataset
-describeData(bmclean)
-# Assigning the subscribers to x 
-YSub <- filter(bmData, y == "yes")
-# Correlation of Numeric Variables
-numeric_var <- sapply(bmclean, is.numeric)
-cormat <- cor(bmclean[,numeric_var])
-ggcorrplot::ggcorrplot(cormat, title = "Correlation of Numeric Variables")
-# Job distribution with respect to y
-ggplot(bmData) + geom_bar(mapping= aes(x= job,fill = y))+theme_light()
-# Job Distribution with respect to contact
-ggplot(YSub, aes(job)) + geom_bar(aes(fill = contact))
-# Age Histogram
-hist(
-  bmData$age,
-  main = "Histogram Plot - Age",
-  xlab = "Age",
-  ylab = "Frequency ",
-  border = "black",
-  xlim = c(0, 100),
-  ylim = c(0, 10000),
-  col = "violet"
-)
-# Age ~ Marital Status Histogram
-ggPlot <- ggplot (bmclean)
-plot1 <- ggPlot + geom_histogram(aes(x = age),
-                                 color = "black",
-                                 fill = "lightyellow",
-                                 binwidth = 3) +
-  ggtitle('Age Distribution') +
-  ylab('Count') +
-  xlab('Age') +
-  geom_vline(aes(xintercept = mean(age), color = "tomato")) +
-  scale_x_continuous(breaks = seq(0, 100, 10)) +
-  theme(legend.position = "none")
-
-# Age ~ Marital Status Box plot
-plot2 <- ggPlot + geom_boxplot(aes(y = age)) +
-  ggtitle('Age Boxplot') +
-  ylab('Age')
-
-grid.arrange(plot1, plot2, ncol = 2, nrow = 1)
-
-# Age ~ Marital Status Histogram plot
-p3 <- ggplot(bmclean, aes(x = age, fill = marital)) +
-  geom_histogram(binwidth = 2, alpha = 0.7) +
-  facet_grid(cols = vars(y)) +
-  expand_limits(x = c(0, 100)) +
-  scale_x_continuous(breaks = seq(0, 100, 20)) +
-  ggtitle("Age vs Marital Status")
-
-p3
-
-meanAge <-
-  bmclean %>% group_by(y) %>% summarize(grp.mean = mean(age))
-# Age ~ Subscription Status Histogram
-ggplot (bmclean, aes(x = age)) +
-  geom_histogram(color = "black",
-                 fill = "lightgreen",
-                 binwidth = 3) +
-  facet_grid(cols = vars(y)) +
-  ggtitle('Age vs Subscription') + ylab('Count') + xlab('Age') +
-  scale_x_continuous(breaks = seq(0, 100, 15)) +
-  geom_vline(
-    data = meanAge,
-    aes(xintercept = grp.mean),
-    color = "red",
-    linetype = "dashed"
-  )
-# Education ~ Subscription Status Barplot
-ggplot(data = bmData, aes(x = education, fill = y)) +
-  geom_bar() +
-  ggtitle("Term Deposit Subscription - Education Level") +
-  xlab(" Education Level") +
-  guides(fill = guide_legend(title = "Subscription"))
-# Age ~ Duration Status Scatter plot
-ggplot(data = bmclean, aes(age, duration)) +
-  geom_point() +
-  facet_grid(cols = vars(y)) +
-  scale_x_continuous(breaks = seq(0, 100, 20)) +
-  ggtitle("Scatterplot of Duration vs Age")
-
-# Campaign ~ Duration Status Scatter plot
-bmclean %>% filter(campaign < 63) %>%
-  ggplot(aes(campaign, duration)) +
-  geom_point() +
-  facet_grid(cols = vars(y)) +
-  ggtitle("Scatterplot of Duration vs Campaign")
-install.packages()
+#Exploring the Relationship between the Categorical Variables and the Term Subscription(y)
 library(egg)
-library(tidyverse)
 library(ggpubr)
 p1 <-ggplot(bmData, aes(x=job,fill=y))+ geom_bar()+theme_bw()+xlab("job") + ylab("frequency")
 p2 <-ggplot(bmData, aes(x=marital,fill=y))+ geom_bar(position = 'fill')+theme_bw()+xlab("marital") + ylab("frequency")
@@ -197,11 +146,23 @@ p10<-ggplot(bmData, aes(x=poutcome,fill=y))+ geom_bar(position = 'fill')+theme_b
 fig1<-ggarrange(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10, labels = 1:2, common.legend = TRUE, legend = "bottom")
 fig1
 annotate_figure(fig1, bottom  = text_grob("Subscription Percentage in categorical variables", col = "blue", face = "bold", size = 14))
-b1<-ggplot(bmData, aes(y= age, x = "", fill = y)) +geom_boxplot() + xlab(" ")
-b2<-ggplot(bmData, aes(y= duration, x = "", fill = y))+geom_boxplot() + xlab(" ")
-fig2<-ggarrange(b1, b2, labels = 1:2, common.legend = TRUE, legend = "bottom")
-fig2
-annotate_figure(fig2, bottom  = text_grob("Subscription Percentage in numeric variables", col = "maroon", face = "bold", size = 14))    
+# Load necessary library
+library(gmodels)
+# Create cross-tabulation between job and marital status
+job_marital_cross <- table(bmclean$job, bmclean$marital)
+# Create a color palette
+my_colors <- c("lightblue", "lightgreen", "orange", "lightyellow", "violet")
+# Create a mosaic plot with color
+mosaicplot(job_marital_cross, main = "Cross-tabulation of Job and Marital Status", color = my_colors)
+# Create cross-tabulation between job and age status
+job_contact_cross <- table(bmclean$job, bmclean$contact)
+# Create a color palette
+my_colors <- c("yellow", "purple")
+# Create a mosaic plot with color
+mosaicplot(job_contact_cross, main = "Cross-tabulation of Job and Age", color = my_colors)
+# Job Distribution with respect to contact
+ggplot(YSub, aes(job)) + geom_bar(aes(fill = contact))
+#Change scientific notation
 options(scipen = 999)
 # Correlation test of Age to the 'y' variable
 ageTermDeposit <-
@@ -209,7 +170,6 @@ ageTermDeposit <-
            as.numeric(as.factor(bmData$age)),
            method = "pearson")
 ageTermDeposit
-
 # Correlation test of Job to the 'y' variable
 jobTermDeposit <-
   cor.test(as.numeric(as.factor(bmData$y)),
@@ -251,7 +211,6 @@ housingLoanTermDeposit <-
              as.numeric(as.factor(bmData$loan)),
            method = "pearson")
 housingLoanTermDeposit
-library(caTools)
 # Training and Testing the data set
 set.seed(12345)
 sampleData <-
@@ -261,14 +220,13 @@ sampleData <-
     replace = F
   )
 trainData <- bmData[sampleData, ]
-head(trainData)
 testData <- bmData[-sampleData, ]
-head(testData)
-
 sapply(bmData, class)
 
 # CART
-bankCART <- rpart(y ~ ., trainData , method = 'class')
+bankCART <- rpart(y ~ ., data = trainData, method = "class",
+                    control = rpart.control(maxdepth = 5, minsplit = 10, minbucket = 5))
+
 par(mfrow = c(1, 1))
 fancyRpartPlot(bankCART ,
                digits = 2 ,
@@ -276,8 +234,9 @@ fancyRpartPlot(bankCART ,
 
 cartPred <- predict(bankCART , testData , type = "class")
 cartProb <- predict(bankCART , testData , type = "prob")
-
-confusionMatrix(as.factor(testData$y), as.factor(cartPred))
+confusion_matrix<-confusionMatrix(as.factor(testData$y), as.factor(cartPred))
+confusion_matrix
+#Cross-Table-Decision-Tree
 CrossTable(
   testData$y,
   cartPred,
@@ -286,7 +245,45 @@ CrossTable(
   prop.r = FALSE,
   dnn = c('actual default', 'predicted default')
 )
+# Fine-tune the decision tree model based on the confusion matrix
+# Define confusion matrix
+confusion_matrix <- matrix(c(7020, 295, 429, 494), nrow = 2, byrow = TRUE,
+                           dimnames = list(Reference = c("no", "yes"),
+                                           Prediction = c("no", "yes")))
+# Extract True Negatives (TN) and False Positives (FP) from the confusion matrix
+TN <- confusion_matrix[1, 1]  # True Negatives
+FP <- confusion_matrix[1, 2]  # False Positives
+# Extract False Negatives (FN) and True Positives (TP) from the confusion matrix
+FN <- confusion_matrix[2, 1]  # False Negatives
+TP <- confusion_matrix[2, 2]  # True Positives
+# Calculate specificity
+Specificity <- TN / (TN + FP)
+# Calculate sensitivity
+Sensitivity <- TP / (TP + FN)
+# Calculate overall accuracy
+Accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+# Calculate precision
+Precision <- TP / (TP + FP)
+# Calculate F1 score
+F1_score <- 2 * (Precision * Sensitivity) / (Precision + Sensitivity)
+# Print the evaluation metrics
+cat("Sensitivity:", Sensitivity, "\n")
+cat("Accuracy:", Accuracy, "\n")
+cat("Precision:", Precision, "\n")
+cat("F1 Score:", F1_score, "\n")
+cat("F1 Score:", F1_score, "\n")
+# Define the cross-validation method with stratified sampling
+train_control <- trainControl(method = "cv", 
+                              number = 1000,  # Number of folds
+                              classProbs = TRUE,  # For class probabilities
+                              summaryFunction = twoClassSummary)  # For two-class classification
 
+# Train the model using cross-validation
+model <- train(y ~ ., data = trainData, 
+               method = "rpart",  
+               trControl = train_control)
+# Print the cross-validated results
+print(model)
 # KNN
 bank.knn <- train(
   y ~ .,
@@ -299,7 +296,6 @@ bank.knn <- train(
 
 predictedkNN <- predict(bank.knn , newdata = testData)
 confusionMatrix(as.factor(predictedkNN) , as.factor(testData$y))
-
 # Cross Table - KNN
 CrossTable(
   testData$y,
@@ -340,10 +336,8 @@ rocr.pred <-
 rocr.perf <-
   performance(rocr.pred, measure = "tpr", x.measure = "fpr")
 rocr.auc <- as.numeric(performance(rocr.pred, "auc")@y.values)
-
 # ROC AUC
 rocr.auc
-
 # Plot ROC Curve
 plot(
   rocr.perf,
@@ -365,9 +359,7 @@ logRegModel <-
   glm(y ~ .,
       family = binomial(link = "logit"),
       data = bmclean)
-logRegModel
-summary(logRegModel)
-
+LogRegPred <- predict(logRegModel, testData)
 # Probability
 prob <-
   (exp(logRegModel$coefficients[1])) / (1 + exp(logRegModel$coefficients[1]))
@@ -381,8 +373,4 @@ rfModel <- train(y ~ .,
 
 refPred <- predict(rfModel, testData)
 confusionMatrix(as.factor(testData$y), as.factor(refPred))
-install.packages()
-library(ggcorrplot)
-model.matrix(~0+., data=bmData) %>% 
-  cor(use="pairwise.complete.obs") %>% 
-  ggcorrplot(show.diag=FALSE, type="lower", lab=TRUE, lab_size=2)
+
